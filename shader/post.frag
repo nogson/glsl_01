@@ -12,7 +12,7 @@ uniform float speed;
 uniform float scrollSpeed;
 uniform vec2 resolution;
 varying vec2 vUv;
-const float size = 30.0;      // モザイク模様ひとつあたりのサイズ
+const float size = 40.0;      // モザイク模様ひとつあたりのサイズ
 
 
 //シンプレックスノイズ
@@ -68,6 +68,9 @@ float rnd(vec2 p){
 }
 
 void main() {
+    //背景のグラデーション
+    vec2 pos = (gl_FragCoord.st * 2.0 - resolution.xy)/ min(resolution.x,resolution.y);
+    float pl = (1.0 - length(pos)) * 0.3;
 
     //ブロックノイズを作る
     vec2 texCoord = floor(gl_FragCoord.st / size) * size;
@@ -90,15 +93,17 @@ void main() {
     offset += snoise(vec2(y * 50.0,0.0)) * 0.01 * distortion2;
 
     //走査線
-    float scanLine = abs(sin(p.y * 400.0 + time * 5.0)) * 0.7 + 0.3;
+    float scanLine = abs(sin(p.y * 400.0 + time * 5.0)) * 0.3 + 0.7;
 
     //UV座標  
-    vec2 u = vec2(fract(p.x + offset + offset2),fract(p.y + offset2 + time * scrollSpeed * 0.5));
+    vec2 u = vec2(fract(p.x + offset + offset2),fract(p.y + offset2 + time * scrollSpeed * 0.3));
     vec4 color = vec4(1.0);
     color.r = texture2D(textuer, u + vec2(0.01 * distortion2,0.0)).r;
     color.g = texture2D(textuer, u + vec2(-0.01 * distortion2,0.0)).g;
     color.b = texture2D(textuer, u + vec2(0.0,0.0)).b;
 
-    gl_FragColor =  color * scanLine;
+    gl_FragColor =  color * scanLine + pl;
+    //gl_FragColor = vec4(vec3(pl),1.0);
+    //gl_FragColor = texture2D(textuer,vUv);
 
 }

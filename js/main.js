@@ -28,19 +28,19 @@ if (ubu.detect.browser.ie) {
 
 window.onload = function () {
 
-    var renderer;
-    var baseCamera, baseScene, baseMaterial;
-    var offCamera, offScene, renderTarget;
-    var theta = 0;
-    var clock = new THREE.Clock();
-    var composer;
-    var customPass;
+    let renderer;
+    let baseCamera, baseScene, baseMaterial;
+    let offCamera, offScene, renderTarget;
+    let theta = 0;
+    let clock = new THREE.Clock();
+    let composer;
+    let customPass;
 
-    var windowWidth = window.innerWidth;
-    var windowHeight = window.innerHeight;
-    var aspect = windowWidth / windowHeight;
-    var videoTexture;
-    var video;
+    let windowWidth = window.innerWidth;
+    let windowHeight = window.innerHeight;
+    let aspect = windowWidth / windowHeight;
+    let videoTexture;
+    let video;
 
     //audio関連の変数
     let context;
@@ -51,10 +51,13 @@ window.onload = function () {
     let fftSize;
 
     //uniform用
-    var time = 0.0;
-    var distortion = 0.0;
-    var distortion2 = 0.0;
-    var scrollSpeed = 0.0;
+    let time = 0.0;
+    let distortion = 0.0;
+    let distortion2 = 0.0;
+    let scrollSpeed = 0.0;
+
+    //その他
+    const materialColors = [0xFFDA00,0x29D64E,0x29D6C5,0x2980D6,0x7529D6,0xFC3AAE,0xCCCCCC,0x333333];
 
     audioInit();
     init();
@@ -64,7 +67,7 @@ window.onload = function () {
 
         // rendererの作成
         renderer = new THREE.WebGLRenderer();
-        renderer.setClearColor(new THREE.Color(0xffffff), 1.0);
+        renderer.setClearColor(new THREE.Color(0xFFFFFF), 1.0);
 
         // canvasをbodyに追加
         document.body.appendChild(renderer.domElement);
@@ -75,12 +78,9 @@ window.onload = function () {
         // ベース用シーン
         baseScene = new THREE.Scene();
 
-        //LIGHTS
-        var light = new THREE.AmbientLight(0xffffff, 1.0);
-        baseScene.add(light);
 
         //共有ジオメトリ
-        var geometry = new THREE.Geometry();
+        let geometry = new THREE.Geometry();
 
         geometry.vertices = [
             new THREE.Vector3(-1.0 * aspect, 1.0, 0.0),
@@ -97,6 +97,7 @@ window.onload = function () {
         //ベースの描画処理用カメラ                      
         baseCamera = new THREE.PerspectiveCamera(60, windowWidth / windowHeight, 0.1, 1000);
         baseCamera.position.z = 1;
+
         baseMaterial = 　new THREE.ShaderMaterial({
             uniforms: {
                 'time': {
@@ -112,50 +113,65 @@ window.onload = function () {
             fragmentShader: baseFrag
         });
 
-        var mesh = new THREE.Mesh(geometry, baseMaterial);
+        let mesh = new THREE.Mesh(geometry, baseMaterial);
         baseScene.add(mesh);
 
         //オフスクリーンレンダリング用
         offScene = new THREE.Scene();
         offCamera = new THREE.PerspectiveCamera(60, windowWidth / windowHeight, 0.1, 1000);
-        offCamera.position.z = 1;
 
-        // var texture = THREE.ImageUtils.loadTexture('images/img.jpg');
-        // var offMaterial = new THREE.MeshBasicMaterial({
-        //     map: texture,
-        //     wireframe: false
-        // });
+        //3Dオブジェクトを読み込み
+        let loader = new THREE.JSONLoader();
+        loader.load('./assets/obj/text.json', function (geometry, materials) {
+            let offMaterial = new THREE.MeshLambertMaterial({
+                color: 0xFF5C5C,
+                shininess: 0
+            });
 
-        //Load Video
-        video = document.createElement('video');
-        video.loop = true;
-        video.src = 'movie/mv.mp4';
-        video.play();
+            let offMesh1 = new THREE.Mesh(geometry, offMaterial);
+            offMesh1.position.set(0, 0, 0);
+            offMesh1.scale.set(0.2, 0.2, 0.2);
+            offScene.add(offMesh1);
 
+            for (let i = 0, j = 30; i < j; i++) {
+                let mesh = createObj();
+                offScene.add(mesh);
+            }
 
-        videoTexture = new THREE.Texture(video);
-        videoTexture.minFilter = THREE.LinearFilter;
-        videoTexture.magFilter = THREE.LinearFilter;
-        // var offMaterial = new THREE.MeshPhongMaterial({
-        //    map: videoTexture
-        // });
+            render();
 
-        var offMaterial = new THREE.MeshPhongMaterial({
-            color: 0x2194ce,
-         });
+        });
 
-        //var offGeometry = new THREE.PlaneGeometry(3, 2, 1, 1);
-        var offGeometry = new THREE.SphereBufferGeometry( 0.2, 5, 5 );
+        function createObj(){
+            let color = materialColors[Math.floor(Math.random() * (materialColors.length - 1))];
+            let geometry = new THREE.IcosahedronGeometry( 0.05,0);
 
-        var offMesh = new THREE.Mesh(offGeometry, offMaterial);
-        offScene.add(offMesh);
+            let material = new THREE.MeshLambertMaterial({
+                color: color,
+                shininess: 0
+            });
 
-        var light2 = new THREE.DirectionalLight(0xffffff);
-        light2.position.set(1, 1, 1).normalize();
-        offScene.add( light2 );
+            let mesh = new THREE.Mesh(geometry, material);
+            
+            mesh.position.set(
+                Math.random() * 2.0 + 0.1 - 1.1,
+                Math.random() * 2.0 + 0.1 - 1.1,
+                Math.random() * 2.0 + 0.2 - 1.1
+            );
+
+            return mesh;
+        }
+
+        //LIGHTS
+        let light = new THREE.AmbientLight(0xffffff, 0.6);
+        offScene.add(light);
+
+        let light2 = new THREE.DirectionalLight(0xffffff, 0.5);
+        light2.position.set(0, 0, 2).normalize();
+        offScene.add(light2);
 
         //オフスクリーンレンダリングしたものをベースシーンのテクスチャとして利用
-        renderTarget = new THREE.WebGLRenderTarget(256, 256, {
+        renderTarget = new THREE.WebGLRenderTarget(1024, 1024, {
             magFilter: THREE.NearestFilter,
             minFilter: THREE.NearestFilter,
             wrapS: THREE.ClampToEdgeWrapping,
@@ -167,10 +183,10 @@ window.onload = function () {
         composer = new THREE.EffectComposer(renderer);
 
         //現在のシーンを設定
-        var renderPass = new THREE.RenderPass(baseScene, baseCamera);
+        let renderPass = new THREE.RenderPass(baseScene, baseCamera);
         composer.addPass(renderPass);
         //カスタムシェーダー
-        var myEffect = {
+        let myEffect = {
             uniforms: {
                 'tDiffuse': {
                     value: null
@@ -217,9 +233,6 @@ window.onload = function () {
         customPass.renderToScreen = true;
         composer.addPass(customPass);
         //------------
-
-
-        render();
     }
 
     function audioInit() {
@@ -253,21 +266,31 @@ window.onload = function () {
     function sum(arr) {
         return arr.reduce(function (prev, current, i, arr) {
             return (prev + current);
-           // return 50;
+            // return 50;
         });
     };
 
     function render() {
 
-        if (video.readyState === video.HAVE_ENOUGH_DATA) {
-            if (videoTexture) videoTexture.needsUpdate = true;
-        }
-        analyser.getByteFrequencyData(dataArray)
+        const radian = time * 50 * Math.PI / 180;
+        // 角度に応じてカメラの位置を設定
+        offCamera.position.x = 1.3 * Math.sin(radian);
+        offCamera.position.z = 1.3 * Math.cos(radian);
+        offCamera.position.y = 0.5 * Math.cos(radian);
+
+
+        offCamera.lookAt(new THREE.Vector3(0, 0, 0));
+
+
+        // if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        //     if (videoTexture) videoTexture.needsUpdate = true;
+        // }
+        analyser.getByteFrequencyData(dataArray);
 
         time = clock.getElapsedTime();
         customPass.uniforms.distortion.value = sum(dataArray) / dataArray.length;
         customPass.uniforms.distortion2.value = sum(dataArray) / (dataArray.length * Math.random() * 10 + 10) * 0.1;
-        customPass.uniforms.distortion3.value = sum(dataArray) / (dataArray.length * Math.random() * 20 + 10) * 0.1;        
+        customPass.uniforms.distortion3.value = sum(dataArray) / (dataArray.length * Math.random() * 20 + 10) * 0.1;
         customPass.uniforms.scrollSpeed.value = sum(dataArray) / (dataArray.length * Math.random() * 500 + 500) * 0.1;
         customPass.uniforms.time.value = time;
         baseMaterial.uniforms.time.value = time;
