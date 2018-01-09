@@ -14,7 +14,8 @@ const watchify = require('watchify');
 const source = require('vinyl-source-stream');
 //GLSLファイルの外部モジュール読み込み用
 const glslify = require('gulp-glslify');
-
+//ファイル結合用
+const concat = require("gulp-concat");
 
 const browserSync = require('browser-sync').create();
 
