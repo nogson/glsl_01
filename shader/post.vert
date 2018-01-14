@@ -1,7 +1,3 @@
-#define GLSLIFY 1
-#define GLSLIFY 1
-
-varying vec3 vNormal;
 varying vec2 vUv;
 
 void main() {

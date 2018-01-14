@@ -8,6 +8,7 @@ uniform float time;
 uniform float distortion;
 uniform float distortion2;
 uniform float distortion3;
+uniform float colorNoise;
 uniform float speed;
 uniform float scrollSpeed;
 uniform vec2 resolution;
@@ -67,6 +68,11 @@ float rnd(vec2 p){
     return fract(sin(dot(p ,vec2(12.9898,78.233))) * 43758.5453);
 }
 
+mat2 scale(vec2 _scale){
+    return mat2(_scale.x,0.0,
+                0.0,_scale.y);
+}
+
 void main() {
     //背景のグラデーション
     vec2 pos = (gl_FragCoord.st * 2.0 - resolution.xy)/ min(resolution.x,resolution.y);
@@ -74,16 +80,19 @@ void main() {
 
     //ブロックノイズを作る
     vec2 texCoord = floor(gl_FragCoord.st / size) * size;
+    vec2 texCoord2x = floor(gl_FragCoord.st / (size * 2.0)) * (size * 2.0);
 
-    // フレームバッファの描画結果をテクスチャから読み出す @@@
+    // フレームバッファの描画結果をテクスチャから読み出す
     vec4 bnoise = texture2D(tDiffuse, vec2(texCoord.x,texCoord.y) / resolution);
-    vec4 bnoise2 = texture2D(textuer, vec2(texCoord.x,texCoord.y) / resolution);
+    vec4 bnoise2 = texture2D(tDiffuse, vec2(texCoord2x.x,texCoord2x.y) / resolution);
+
 
     //ブロックノイズ用オフセット
     float offset2 = (bnoise.r + bnoise.g + bnoise.b)/3.0;
     offset2 =  offset2 * distortion3 * 0.1;
    
     vec2 p = vUv;
+
     float y = p.y + time * speed;
 
     float n = snoise(vec2(y,0.0));
@@ -93,17 +102,27 @@ void main() {
     offset += snoise(vec2(y * 50.0,0.0)) * 0.01 * distortion2;
 
     //走査線
-    float scanLine = abs(sin(p.y * 400.0 + time * 5.0)) * 0.3 + 0.7;
+    float scanLine = abs(sin(p.y * 400.0 + mod(time, 10.0) * 5.0)) * 0.3 + 0.7 ;
 
     //UV座標  
-    vec2 u = vec2(fract(p.x + offset + offset2),fract(p.y + offset2 + time * scrollSpeed * 0.3));
+    vec2 u = vec2(fract(p.x + offset + offset2),fract(p.y + offset2 + mod(time, 10.0) * scrollSpeed * 0.3));
+
     vec4 color = vec4(1.0);
     color.r = texture2D(textuer, u + vec2(0.01 * distortion2,0.0)).r;
     color.g = texture2D(textuer, u + vec2(-0.01 * distortion2,0.0)).g;
     color.b = texture2D(textuer, u + vec2(0.0,0.0)).b;
 
-    gl_FragColor =  color * scanLine + pl;
-    //gl_FragColor = vec4(vec3(pl),1.0);
-    //gl_FragColor = texture2D(textuer,vUv);
+    //色を反転
+    vec4 color2 = 1.0 - color   ;
+    float s = step(0.005,sin(bnoise2.r * colorNoise));
+
+    if(s <= 0.0){
+        color.r = texture2D(textuer, u + vec2(0.01 * distortion2,0.0)).b;
+        color.g = texture2D(textuer, u + vec2(-0.01 * distortion2,0.0)).g;
+        color.b = texture2D(textuer, u + vec2(0.0,0.0)).r;
+    }
+
+    gl_FragColor = color * scanLine + pl;
+    //gl_FragColor = vec4(vec3(s),1.0);
 
 }

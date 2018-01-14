@@ -9,6 +9,7 @@ module.exports = class PostScene {
         let windowHeight = window.innerHeight;
         let time = 0;
         let distortion = 0;
+        let colorNoise = 0;
 
         //現在のシーンを設定
         this.renderPass = new THREE.RenderPass(scene, camera);
@@ -47,6 +48,10 @@ module.exports = class PostScene {
                     type: 'f',
                     value: 2.0
                 },
+                'colorNoise': {
+                    type: 'f',
+                    value: colorNoise
+                },
                 'scrollSpeed': {
                     type: 'f',
                     value: 0.5
@@ -69,10 +74,13 @@ module.exports = class PostScene {
 
 
     render(time,data){
-        this.customPass.uniforms.distortion.value = this.sum(data) / data.length;
-        this.customPass.uniforms.distortion2.value = this.sum(data) / (data.length * Math.random() * 10 + 10) * 0.1;
-        this.customPass.uniforms.distortion3.value = this.sum(data) / (data.length * Math.random() * 20 + 10) * 0.1;
-        this.customPass.uniforms.scrollSpeed.value = this.sum(data) / (data.length * Math.random() * 500 + 500) * 0.1;
+        let audioData = this.sum(data);
+        let audioDataLength =  data.length;
+        this.customPass.uniforms.distortion.value = audioData / audioDataLength;
+        this.customPass.uniforms.distortion2.value = audioData / (audioDataLength * Math.random() * 10 + 10) * 0.1;
+        this.customPass.uniforms.distortion3.value = audioData / (audioDataLength * Math.random() * 20 + 10) * 0.1;
+        this.customPass.uniforms.scrollSpeed.value = audioData / (audioDataLength * Math.random() * 500 + 500) * 0.1;
+        this.customPass.uniforms.colorNoise.value = audioData / (audioDataLength * Math.random() * 20 + 20) * 0.1;
         this.customPass.uniforms.time.value = time;
         this.customPass.uniforms.textuer.value.needsUpdate = true;
 

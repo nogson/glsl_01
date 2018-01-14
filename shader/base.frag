@@ -1,7 +1,5 @@
 #ifdef GL_ES
 precision mediump float;
-#define GLSLIFY 1
-#define GLSLIFY 1
 #endif
  
 const   int       oct = 8;         // オクターブ
@@ -9,7 +7,6 @@ const   float     per = 0.5;       // パーセンテージ
 const   float     PI  = 3.1415926; // 円周率
 uniform float time;
 uniform vec2 resolution;
-varying vec2 vUv;
 
 // 補間関数
 float interpolate(float a, float b, float x){
