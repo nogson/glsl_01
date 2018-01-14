@@ -102,7 +102,7 @@ void main() {
     offset += snoise(vec2(y * 50.0,0.0)) * 0.01 * distortion2;
 
     //走査線
-    float scanLine = abs(sin(p.y * 400.0 + mod(time, 10.0) * 5.0)) * 0.3 + 0.7 ;
+    float scanLine = abs(sin(p.y * 400.0 + mod(time, 10.0) * 5.0)) * 0.2 + 0.8;
 
     //UV座標  
     vec2 u = vec2(fract(p.x + offset + offset2),fract(p.y + offset2 + mod(time, 10.0) * scrollSpeed * 0.3));
@@ -114,7 +114,7 @@ void main() {
 
     //色を反転
     vec4 color2 = 1.0 - color   ;
-    float s = step(0.005,sin(bnoise2.r * colorNoise));
+    float s = step(0.0025,sin(bnoise2.r * colorNoise));
 
     if(s <= 0.0){
         color.r = texture2D(textuer, u + vec2(0.01 * distortion2,0.0)).b;
@@ -123,6 +123,8 @@ void main() {
     }
 
     gl_FragColor = color * scanLine + pl;
-    //gl_FragColor = vec4(vec3(s),1.0);
+    //gl_FragColor =vec4(vec3(scanLine2),1.0);
+
+    //gl_FragColor = texture2D(textuer,vUv);
 
 }

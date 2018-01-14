@@ -193,17 +193,18 @@ module.exports = function () {
         var windowWidth = window.innerWidth;
         var windowHeight = window.innerHeight;
         var aspect = windowWidth / windowHeight;
-        this.materialColors = [0xFFDA00, 0x29D64E, 0x29D6C5, 0x2980D6, 0x7529D6, 0xFC3AAE, 0xCCCCCC, 0x333333];
+        this.meshes = [];
+        this.materialColors = [0xe8453f, 0xe86d51, 0xec5564, 0xd94452, 0x3498db, 0x3498db, 0x9b59b6, 0xFF0000, 0xFFFF00];
 
         //オフスクリーンレンダリング用
         this.scene = new THREE.Scene();
         this.camera = new THREE.PerspectiveCamera(60, windowWidth / windowHeight, 0.1, 1000);
 
-        var light = new THREE.AmbientLight(0xffffff, 0.6);
+        var light = new THREE.AmbientLight(0xffffff, 0.5);
         this.scene.add(light);
 
-        var light2 = new THREE.DirectionalLight(0xffffff, 0.5);
-        light2.position.set(0, 0, 2).normalize();
+        var light2 = new THREE.DirectionalLight(0xffffff, 1.0);
+        light2.position.set(0, 2, 2).normalize();
         this.scene.add(light2);
 
         //オフスクリーンレンダリングしたものをベースシーンのテクスチャとして利用
@@ -224,26 +225,36 @@ module.exports = function () {
             //3Dオブジェクトを読み込み
             var loader = new THREE.JSONLoader();
 
-            loader.load('./assets/obj/text.json', function (geometry, materials) {
-                var material = new THREE.MeshLambertMaterial({
-                    color: 0xFF5C5C
+            var jsons = [{ path: './assets/obj/G.json', x: -0.425, c: this.materialColors[0] }, { path: './assets/obj/L.json', x: -0.115, c: this.materialColors[1] }, { path: './assets/obj/S.json', x: 0.115, c: this.materialColors[2] }, { path: './assets/obj/L.json', x: 0.425, c: this.materialColors[3] }];
+
+            var _loop = function _loop(i, l) {
+                var param = jsons[i];
+                loader.load(param.path, function (geometry, materials) {
+                    var material = new THREE.MeshLambertMaterial({
+                        color: param.c
+                    });
+
+                    var mesh = new THREE.Mesh(geometry, material);
+                    mesh.position.set(param.x, 0, 0);
+                    mesh.scale.set(0.2, 0.2, 0.2);
+                    self.scene.add(mesh);
+                    self.meshes.push(mesh);
                 });
+            };
 
-                var mesh = new THREE.Mesh(geometry, material);
-                mesh.position.set(0, 0, 0);
-                mesh.scale.set(0.2, 0.2, 0.2);
+            for (var i = 0, l = jsons.length; i < l; i++) {
+                _loop(i, l);
+            }
+
+            for (var i = 0, j = 30; i < j; i++) {
+                var mesh = self.createMesh();
                 self.scene.add(mesh);
-
-                for (var i = 0, j = 30; i < j; i++) {
-                    var _mesh = self.createMesh();
-                    self.scene.add(_mesh);
-                }
-            });
+            }
         }
     }, {
         key: 'createMesh',
         value: function createMesh() {
-            var color = this.materialColors[Math.floor(Math.random() * (this.materialColors.length - 1))];
+            var color = this.materialColors[Math.floor(Math.random() * this.materialColors.length)];
             var geometry = new THREE.IcosahedronGeometry(0.05, 0);
 
             var material = new THREE.MeshLambertMaterial({
@@ -259,6 +270,7 @@ module.exports = function () {
     }, {
         key: 'render',
         value: function render(time) {
+            var self = this;
             var radian = time * 50 * Math.PI / 180;
             // 角度に応じてカメラの位置を設定
             this.camera.position.x = 1.3 * Math.sin(radian);
@@ -266,6 +278,12 @@ module.exports = function () {
             this.camera.position.y = 0.5 * Math.cos(radian);
 
             this.camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+            for (var i = 0, l = self.meshes.length; i < l; i++) {
+                self.meshes[i].position.z = i * Math.cos(radian) * 0.03;
+                self.meshes[i].position.y = i * Math.cos(radian) * 0.03;
+                self.meshes[i].rotation.y = i * Math.cos(radian);
+            }
         }
     }]);
 
@@ -386,7 +404,7 @@ module.exports = "#ifdef GL_ES\nprecision mediump float;\n#endif\n \nconst   int
 module.exports = "\n\nvoid main() {\n  gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );\n}";
 
 },{}],8:[function(require,module,exports){
-module.exports = "#ifdef GL_ES\nprecision mediump float;\n#endif\n\nuniform sampler2D tDiffuse;\nuniform sampler2D textuer;\nuniform float time;\nuniform float distortion;\nuniform float distortion2;\nuniform float distortion3;\nuniform float colorNoise;\nuniform float speed;\nuniform float scrollSpeed;\nuniform vec2 resolution;\nvarying vec2 vUv;\nconst float size = 40.0;      // モザイク模様ひとつあたりのサイズ\n\n\n//シンプレックスノイズ\n//https://github.com/ashima/webgl-noise/blob/master/src/noise2D.glsl\nvec3 mod289(vec3 x) {\n    return x - floor(x * (1.0 / 289.0)) * 289.0;\n}\n\nvec2 mod289(vec2 x) {\n    return x - floor(x * (1.0 / 289.0)) * 289.0;\n}\n\nvec3 permute(vec3 x) {\n    return mod289(((x * 34.0) + 1.0) * x);\n}\n\nfloat snoise(vec2 v) {\n    const vec4 C = vec4(0.211324865405187, // (3.0-sqrt(3.0))/6.0,\n        0.366025403784439, // 0.5*(sqrt(3.0)-1.0),\n        -0.577350269189626, // -1.0 + 2.0 * C.x,\n        0.024390243902439); // 1.0 / 41.0,\n    vec2 i = floor(v + dot(v, C.yy));\n    vec2 x0 = v - i + dot(i, C.xx);\n\n    vec2 i1;\n    i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);\n    vec4 x12 = x0.xyxy + C.xxzz;\n    x12.xy -= i1;\n\n    i = mod289(i);\n    // Avoid truncation effects in permutation,\n    vec3 p = permute(permute(i.y + vec3(0.0, i1.y, 1.0)) + i.x + vec3(0.0, i1.x, 1.0));\n\n    vec3 m = max(0.5 - vec3(dot(x0, x0), dot(x12.xy, x12.xy), dot(x12.zw, x12.zw)), 0.0);\n    m = m * m;\n    m = m * m;\n\n    vec3 x = 2.0 * fract(p * C.www) - 1.0;\n    vec3 h = abs(x) - 0.5;\n    vec3 ox = floor(x + 0.5);\n    vec3 a0 = x - ox;\n\n    m *= 1.79284291400159 - 0.85373472095314 * (a0 * a0 + h * h);\n\n    vec3 g;\n    g.x = a0.x * x0.x + h.x * x0.y;\n    g.yz = a0.yz * x12.xz + h.yz * x12.yw;\n    return 130.0 * dot(m, g);\n}\n\nfloat rnd(vec2 p){\n    return fract(sin(dot(p ,vec2(12.9898,78.233))) * 43758.5453);\n}\n\nmat2 scale(vec2 _scale){\n    return mat2(_scale.x,0.0,\n                0.0,_scale.y);\n}\n\nvoid main() {\n    //背景のグラデーション\n    vec2 pos = (gl_FragCoord.st * 2.0 - resolution.xy)/ min(resolution.x,resolution.y);\n    float pl = (1.0 - length(pos)) * 0.3;\n\n    //ブロックノイズを作る\n    vec2 texCoord = floor(gl_FragCoord.st / size) * size;\n    vec2 texCoord2x = floor(gl_FragCoord.st / (size * 2.0)) * (size * 2.0);\n\n    // フレームバッファの描画結果をテクスチャから読み出す\n    vec4 bnoise = texture2D(tDiffuse, vec2(texCoord.x,texCoord.y) / resolution);\n    vec4 bnoise2 = texture2D(tDiffuse, vec2(texCoord2x.x,texCoord2x.y) / resolution);\n\n\n    //ブロックノイズ用オフセット\n    float offset2 = (bnoise.r + bnoise.g + bnoise.b)/3.0;\n    offset2 =  offset2 * distortion3 * 0.1;\n   \n    vec2 p = vUv;\n\n    float y = p.y + time * speed;\n\n    float n = snoise(vec2(y,0.0));\n    float offset = snoise(vec2(y,0.0));\n\n    offset = offset * distortion * 0.005;\n    offset += snoise(vec2(y * 50.0,0.0)) * 0.01 * distortion2;\n\n    //走査線\n    float scanLine = abs(sin(p.y * 400.0 + mod(time, 10.0) * 5.0)) * 0.3 + 0.7 ;\n\n    //UV座標  \n    vec2 u = vec2(fract(p.x + offset + offset2),fract(p.y + offset2 + mod(time, 10.0) * scrollSpeed * 0.3));\n\n    vec4 color = vec4(1.0);\n    color.r = texture2D(textuer, u + vec2(0.01 * distortion2,0.0)).r;\n    color.g = texture2D(textuer, u + vec2(-0.01 * distortion2,0.0)).g;\n    color.b = texture2D(textuer, u + vec2(0.0,0.0)).b;\n\n    //色を反転\n    vec4 color2 = 1.0 - color   ;\n    float s = step(0.005,sin(bnoise2.r * colorNoise));\n\n    if(s <= 0.0){\n        color.r = texture2D(textuer, u + vec2(0.01 * distortion2,0.0)).b;\n        color.g = texture2D(textuer, u + vec2(-0.01 * distortion2,0.0)).g;\n        color.b = texture2D(textuer, u + vec2(0.0,0.0)).r;\n    }\n\n    gl_FragColor = color * scanLine + pl;\n    //gl_FragColor = vec4(vec3(s),1.0);\n\n}";
+module.exports = "#ifdef GL_ES\nprecision mediump float;\n#endif\n\nuniform sampler2D tDiffuse;\nuniform sampler2D textuer;\nuniform float time;\nuniform float distortion;\nuniform float distortion2;\nuniform float distortion3;\nuniform float colorNoise;\nuniform float speed;\nuniform float scrollSpeed;\nuniform vec2 resolution;\nvarying vec2 vUv;\nconst float size = 40.0;      // モザイク模様ひとつあたりのサイズ\n\n\n//シンプレックスノイズ\n//https://github.com/ashima/webgl-noise/blob/master/src/noise2D.glsl\nvec3 mod289(vec3 x) {\n    return x - floor(x * (1.0 / 289.0)) * 289.0;\n}\n\nvec2 mod289(vec2 x) {\n    return x - floor(x * (1.0 / 289.0)) * 289.0;\n}\n\nvec3 permute(vec3 x) {\n    return mod289(((x * 34.0) + 1.0) * x);\n}\n\nfloat snoise(vec2 v) {\n    const vec4 C = vec4(0.211324865405187, // (3.0-sqrt(3.0))/6.0,\n        0.366025403784439, // 0.5*(sqrt(3.0)-1.0),\n        -0.577350269189626, // -1.0 + 2.0 * C.x,\n        0.024390243902439); // 1.0 / 41.0,\n    vec2 i = floor(v + dot(v, C.yy));\n    vec2 x0 = v - i + dot(i, C.xx);\n\n    vec2 i1;\n    i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);\n    vec4 x12 = x0.xyxy + C.xxzz;\n    x12.xy -= i1;\n\n    i = mod289(i);\n    // Avoid truncation effects in permutation,\n    vec3 p = permute(permute(i.y + vec3(0.0, i1.y, 1.0)) + i.x + vec3(0.0, i1.x, 1.0));\n\n    vec3 m = max(0.5 - vec3(dot(x0, x0), dot(x12.xy, x12.xy), dot(x12.zw, x12.zw)), 0.0);\n    m = m * m;\n    m = m * m;\n\n    vec3 x = 2.0 * fract(p * C.www) - 1.0;\n    vec3 h = abs(x) - 0.5;\n    vec3 ox = floor(x + 0.5);\n    vec3 a0 = x - ox;\n\n    m *= 1.79284291400159 - 0.85373472095314 * (a0 * a0 + h * h);\n\n    vec3 g;\n    g.x = a0.x * x0.x + h.x * x0.y;\n    g.yz = a0.yz * x12.xz + h.yz * x12.yw;\n    return 130.0 * dot(m, g);\n}\n\nfloat rnd(vec2 p){\n    return fract(sin(dot(p ,vec2(12.9898,78.233))) * 43758.5453);\n}\n\nmat2 scale(vec2 _scale){\n    return mat2(_scale.x,0.0,\n                0.0,_scale.y);\n}\n\nvoid main() {\n    //背景のグラデーション\n    vec2 pos = (gl_FragCoord.st * 2.0 - resolution.xy)/ min(resolution.x,resolution.y);\n    float pl = (1.0 - length(pos)) * 0.3;\n\n    //ブロックノイズを作る\n    vec2 texCoord = floor(gl_FragCoord.st / size) * size;\n    vec2 texCoord2x = floor(gl_FragCoord.st / (size * 2.0)) * (size * 2.0);\n\n    // フレームバッファの描画結果をテクスチャから読み出す\n    vec4 bnoise = texture2D(tDiffuse, vec2(texCoord.x,texCoord.y) / resolution);\n    vec4 bnoise2 = texture2D(tDiffuse, vec2(texCoord2x.x,texCoord2x.y) / resolution);\n\n\n    //ブロックノイズ用オフセット\n    float offset2 = (bnoise.r + bnoise.g + bnoise.b)/3.0;\n    offset2 =  offset2 * distortion3 * 0.1;\n   \n    vec2 p = vUv;\n\n    float y = p.y + time * speed;\n\n    float n = snoise(vec2(y,0.0));\n    float offset = snoise(vec2(y,0.0));\n\n    offset = offset * distortion * 0.005;\n    offset += snoise(vec2(y * 50.0,0.0)) * 0.01 * distortion2;\n\n    //走査線\n    float scanLine = abs(sin(p.y * 400.0 + mod(time, 10.0) * 5.0)) * 0.2 + 0.8;\n\n    //UV座標  \n    vec2 u = vec2(fract(p.x + offset + offset2),fract(p.y + offset2 + mod(time, 10.0) * scrollSpeed * 0.3));\n\n    vec4 color = vec4(1.0);\n    color.r = texture2D(textuer, u + vec2(0.01 * distortion2,0.0)).r;\n    color.g = texture2D(textuer, u + vec2(-0.01 * distortion2,0.0)).g;\n    color.b = texture2D(textuer, u + vec2(0.0,0.0)).b;\n\n    //色を反転\n    vec4 color2 = 1.0 - color   ;\n    float s = step(0.0025,sin(bnoise2.r * colorNoise));\n\n    if(s <= 0.0){\n        color.r = texture2D(textuer, u + vec2(0.01 * distortion2,0.0)).b;\n        color.g = texture2D(textuer, u + vec2(-0.01 * distortion2,0.0)).g;\n        color.b = texture2D(textuer, u + vec2(0.0,0.0)).r;\n    }\n\n    gl_FragColor = color * scanLine + pl;\n    //gl_FragColor =vec4(vec3(scanLine2),1.0);\n\n    //gl_FragColor = texture2D(textuer,vUv);\n\n}";
 
 },{}],9:[function(require,module,exports){
 module.exports = "varying vec2 vUv;\n\nvoid main() {\n  vUv = uv; \n  gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );\n}";
