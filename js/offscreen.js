@@ -1,3 +1,5 @@
+const Utils = require('./utils.js');
+
 module.exports = class Offscreen {
 
     constructor() {
@@ -6,6 +8,7 @@ module.exports = class Offscreen {
         let aspect = windowWidth / windowHeight;
         this.meshes = [];
         this.materialColors = [0xe8453f,0xe86d51, 0xec5564, 0xd94452, 0x3498db, 0x3498db, 0x9b59b6, 0xFF0000, 0xFFFF00];
+        this.utils = new Utils();
 
         //オフスクリーンレンダリング用
         this.scene = new THREE.Scene();
@@ -81,13 +84,17 @@ module.exports = class Offscreen {
         return mesh;
     }
 
-    render(time) {
+    render(time,data) {
         let self = this;
-        const radian = time * 50 * Math.PI / 180;
+        let audioData = this.utils.sum(data);
+        let audioDataLength =  data.length;
+        let v = (audioData / audioDataLength) * 0.01;
+
+        let radian = (time ) * 50 * Math.PI / 180;
         // 角度に応じてカメラの位置を設定
-        this.camera.position.x = 1.3 * Math.sin(radian);
-        this.camera.position.z = 1.0 * Math.cos(radian) - 0.5;
-        this.camera.position.y = 0.5 * Math.cos(radian);
+        this.camera.position.x = 1.3 * Math.sin(radian) - v;
+        this.camera.position.z = 1.0 * Math.cos(radian) - 0.5 - v;
+        this.camera.position.y = 0.5 * Math.cos(radian) - v;
 
         this.camera.lookAt(new THREE.Vector3(0, 0, 0));
 
@@ -96,6 +103,12 @@ module.exports = class Offscreen {
             self.meshes[i].position.y = (i * Math.cos(radian)) * 0.03;
             self.meshes[i].rotation.y = i * Math.cos(radian);
         }
+    }
+
+    sum(arr) {
+        return arr.reduce(function (prev, current, i, arr) {
+            return (prev + current);
+        });
     }
 
 

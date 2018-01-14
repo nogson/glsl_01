@@ -1,5 +1,6 @@
 const postVert = require('./../shader/post.vert');
 const postFrag = require('./../shader/post.frag');
+const Utils = require('./utils.js');
 
 module.exports = class PostScene {
 
@@ -7,6 +8,7 @@ module.exports = class PostScene {
 
         let windowWidth = window.innerWidth;
         let windowHeight = window.innerHeight;
+        this.utils = new Utils();
         let time = 0;
         let distortion = 0;
         let colorNoise = 0;
@@ -74,7 +76,7 @@ module.exports = class PostScene {
 
 
     render(time,data){
-        let audioData = this.sum(data);
+        let audioData = this.utils.sum(data);
         let audioDataLength =  data.length;
         this.customPass.uniforms.distortion.value = audioData / audioDataLength;
         this.customPass.uniforms.distortion2.value = audioData / (audioDataLength * Math.random() * 10 + 10) * 0.05;
@@ -86,12 +88,6 @@ module.exports = class PostScene {
 
         this.composer.render();
     }
-
-    sum(arr) {
-        return arr.reduce(function (prev, current, i, arr) {
-            return (prev + current);
-        });
-    };
 
 
 };

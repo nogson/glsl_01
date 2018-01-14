@@ -62,7 +62,7 @@ window.onload = function () {
         let data = audio.getData();
         time = clock.getElapsedTime();
 
-        offscreen.render(time);
+        offscreen.render(time,data);
         baseScene.render(time);
         postScene.render(time,data);
         renderer.render(offscreen.scene, offscreen.camera, offscreen.renderTarget);
