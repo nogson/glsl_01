@@ -11,7 +11,12 @@ module.exports = function () {
 
         var self = this;
         navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
+        //const context = new AudioContext();
+        //let context = null;
+        var AudioContext = window.AudioContext || window.webkitAudioContext || false;
+
         var context = new AudioContext();
+
         var bufferLength = null;
         var source = null;
         this.analyser = context.createAnalyser();
@@ -24,7 +29,7 @@ module.exports = function () {
         this.analyser.getByteFrequencyData(this.dataArray); //周波数領域の波形データを取得
 
         //マイクの音を取得
-        navigator.webkitGetUserMedia({
+        navigator.getUserMedia({
             audio: true
         }, function (stream) {
             source = context.createMediaStreamSource(stream);
