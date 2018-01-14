@@ -2,7 +2,7 @@ module.exports = class Audio {
 
     constructor() {
         let self = this;
-        navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
+        navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia || navigator.mediaDevices;
         //const context = new AudioContext();
         //let context = null;
         var AudioContext = window.AudioContext || window.webkitAudioContext || false;
