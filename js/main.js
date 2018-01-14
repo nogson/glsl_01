@@ -21,8 +21,6 @@ try {
     notWebGL();
 }
 
-// 返ってくる値を確認してみましょう！
-console.log(ubu.detect);
 // IEの時
 if (ubu.detect.browser.ie) {
     console.log('IEさん、動画テクスチャはちょっと…無理ですね…')
