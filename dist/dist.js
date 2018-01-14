@@ -162,12 +162,12 @@ window.onload = function () {
     var baseScene = new BaseScene();
     var offscreen = new Offscreen();
     var postScene = new PostScene(renderer, baseScene.scene, baseScene.camera, offscreen.renderTarget);
-    // const audio = new Audio();
+    var audio = new Audio();
 
     render();
 
     function render() {
-        var data = [1.0];
+        var data = audio.getData();
         time = clock.getElapsedTime();
 
         offscreen.render(time);
