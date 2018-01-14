@@ -86,7 +86,7 @@ module.exports = class Offscreen {
         const radian = time * 50 * Math.PI / 180;
         // 角度に応じてカメラの位置を設定
         this.camera.position.x = 1.3 * Math.sin(radian);
-        this.camera.position.z = 1.3 * Math.cos(radian);
+        this.camera.position.z = 1.0 * Math.cos(radian) - 0.5;
         this.camera.position.y = 0.5 * Math.cos(radian);
 
         this.camera.lookAt(new THREE.Vector3(0, 0, 0));

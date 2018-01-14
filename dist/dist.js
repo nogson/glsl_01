@@ -274,7 +274,7 @@ module.exports = function () {
             var radian = time * 50 * Math.PI / 180;
             // 角度に応じてカメラの位置を設定
             this.camera.position.x = 1.3 * Math.sin(radian);
-            this.camera.position.z = 1.3 * Math.cos(radian);
+            this.camera.position.z = 1.0 * Math.cos(radian) - 0.5;
             this.camera.position.y = 0.5 * Math.cos(radian);
 
             this.camera.lookAt(new THREE.Vector3(0, 0, 0));
@@ -376,9 +376,9 @@ module.exports = function () {
             var audioData = this.sum(data);
             var audioDataLength = data.length;
             this.customPass.uniforms.distortion.value = audioData / audioDataLength;
-            this.customPass.uniforms.distortion2.value = audioData / (audioDataLength * Math.random() * 10 + 10) * 0.1;
-            this.customPass.uniforms.distortion3.value = audioData / (audioDataLength * Math.random() * 20 + 10) * 0.1;
-            this.customPass.uniforms.scrollSpeed.value = audioData / (audioDataLength * Math.random() * 500 + 500) * 0.1;
+            this.customPass.uniforms.distortion2.value = audioData / (audioDataLength * Math.random() * 10 + 10) * 0.05;
+            this.customPass.uniforms.distortion3.value = audioData / (audioDataLength * Math.random() * 20 + 10) * 0.05;
+            this.customPass.uniforms.scrollSpeed.value = audioData / (audioDataLength * Math.random() * 500 + 500) * 0.05;
             this.customPass.uniforms.colorNoise.value = audioData / (audioDataLength * Math.random() * 20 + 20) * 0.1;
             this.customPass.uniforms.time.value = time;
             this.customPass.uniforms.textuer.value.needsUpdate = true;
