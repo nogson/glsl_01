@@ -59,7 +59,7 @@ window.onload = function () {
     render();
 
     function render() {
-        let data = 1.0;
+        let data = [1.0];
         time = clock.getElapsedTime();
 
         offscreen.render(time);

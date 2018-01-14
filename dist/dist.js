@@ -167,7 +167,7 @@ window.onload = function () {
     render();
 
     function render() {
-        var data = 1.0;
+        var data = [1.0];
         time = clock.getElapsedTime();
 
         offscreen.render(time);
